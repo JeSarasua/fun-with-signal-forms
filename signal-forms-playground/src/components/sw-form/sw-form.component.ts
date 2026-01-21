@@ -1,22 +1,23 @@
-import { Component } from '@angular/core';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, signal } from '@angular/core';
 import { QuantityStepperComponent } from '../quantity-stepper/quantity-stepper.component';
+import { form, FormField, min, required } from '@angular/forms/signals';
 
 @Component({
   selector: 'app-sw-form',
-  imports: [ReactiveFormsModule, QuantityStepperComponent],
+  imports: [QuantityStepperComponent, FormField],
   template: `
     <label for="qty">Quantity</label>
-    <app-quantity-stepper id="qty" [formControl]="quantity" />
-    <p>Value: {{ quantity.value }}</p>
-    @if (quantity.invalid) {
+    <app-quantity-stepper id="qty" [formField]="cartForm.quantity" />
+    <p>Value: {{ cartForm.quantity().value() }}</p>
+    @if (cartForm.quantity().invalid()) {
       <div class="error">Quantity must be at least 1</div>
     }
   `,
 })
 export class SwFormComponent {
-  quantity = new FormControl<number>(1, {
-    nonNullable: true,
-    validators: [Validators.min(1)],
+  model = signal({ quantity: 1 });
+  cartForm = form(this.model, (schema) => {
+    required(schema.quantity);
+    min(schema.quantity, 1);
   });
 }

@@ -1,17 +1,10 @@
-import { Component, forwardRef, signal } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Component, input, model } from '@angular/core';
+import { FormValueControl } from '@angular/forms/signals';
 
 @Component({
   selector: 'app-quantity-stepper',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => QuantityStepperComponent),
-      multi: true,
-    },
-  ],
   imports: [],
-  template: `@let disabled = isDisabled;
+  template: `@let disabled = isDisabled();
     <div class="stepper" [class.is-disabled]="disabled">
       <button
         type="button"
@@ -41,43 +34,15 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       </button>
     </div> `,
 })
-export class QuantityStepperComponent implements ControlValueAccessor {
-  #value = signal(1);
-  value = this.#value;
-  isDisabled = false;
+export class QuantityStepperComponent implements FormValueControl<number> {
+  value = model(1);
+  isDisabled = input(false);
 
-  private onChange: (v: number) => void = () => {};
-  private onTouched: () => void = () => {};
-
-  writeValue(v: number | null): void {
-    this.#value.set(v ?? 1);
+  increment() {
+    this.value.update((v) => v + 1);
   }
 
-  registerOnChange(fn: (v: number) => void) {
-    this.onChange = fn;
-  }
-
-  registerOnTouched(fn: () => void) {
-    this.onTouched = fn;
-  }
-
-  setDisabledState(disabled: boolean) {
-    this.isDisabled = disabled;
-  }
-
-  protected increment() {
-    this.#value.update((v) => {
-      const n = v + 1;
-      this.onChange(n);
-      return n;
-    });
-  }
-
-  protected decrement() {
-    this.#value.update((v) => {
-      const n = Math.max(1, v - 1);
-      this.onChange(n);
-      return n;
-    });
+  decrement() {
+    this.value.update((v) => Math.max(1, v - 1));
   }
 }
