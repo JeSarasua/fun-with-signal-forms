@@ -1,5 +1,5 @@
 import { Component, signal } from '@angular/core';
-import { email, form, FormField, required } from '@angular/forms/signals';
+import { email, form, FormField, min, required } from '@angular/forms/signals';
 
 interface InterestData {
   name: string;
@@ -13,18 +13,16 @@ interface InterestData {
   imports: [FormField],
   styleUrl: 'sw-form.component.scss',
   template: `
-    <h2>Star wars character casting</h2>
-    <form (submit)="onSubmit($event)">
+    <h2>Interest Form</h2>
+    <form (submit)="onSubmit()">
       <div>
         <label>
           Name
           <input type="name" [formField]="interestForm.name" />
         </label>
-        @if (interestForm.name().invalid() && interestForm.name().touched()) {
+        @if (interestForm.name().touched() && interestForm.name().invalid()) {
           <div class="error">
-            @for (error of interestForm.name().errors(); track error.kind) {
-              <span>{{ error.message }}</span>
-            }
+            <span>{{ interestForm.name().errors()[0]?.message }}</span>
           </div>
         }
       </div>
@@ -34,11 +32,9 @@ interface InterestData {
           Email
           <input type="email" [formField]="interestForm.email" />
         </label>
-        @if (interestForm.email().invalid() && interestForm.email().touched()) {
+        @if (interestForm.email().touched() && interestForm.email().invalid()) {
           <div class="error">
-            @for (error of interestForm.email().errors(); track error.kind) {
-              <span>{{ error.message }}</span>
-            }
+            <span>{{ interestForm.email().errors()[0]?.message }}</span>
           </div>
         }
       </div>
@@ -48,12 +44,10 @@ interface InterestData {
           Age
           <input type="number" [formField]="interestForm.age" />
         </label>
-        @if (interestForm.age().invalid() && interestForm.age().touched()) {
-          @for (error of interestForm.age().errors(); track error.kind) {
-            <div class="error">
-              <span>{{ error.message }}</span>
-            </div>
-          }
+        @if (interestForm.age().touched() && interestForm.age().invalid()) {
+          <div class="error">
+            <span>{{ interestForm.age().errors()[0]?.message }}</span>
+          </div>
         }
       </div>
 
@@ -69,21 +63,25 @@ interface InterestData {
   `,
 })
 export class SwFormComponent {
-  interestModel = signal<InterestData>({
+  interestFormModel = signal<InterestData>({
     name: '',
     email: '',
     age: 0,
     subscribe: false,
   });
 
-  interestForm = form(this.interestModel, (field) => {
-    required(field.email, { message: 'Email is required' });
-    required(field.name, { message: 'Name is required' });
-    email(field.email, { message: 'Must be valid Email' });
-    required(field.age, { message: 'Age is required' });
+  interestForm = form(this.interestFormModel, (formField) => {
+    required(formField.name, { message: 'Name is required' });
+    required(formField.email, { message: 'Email is required' });
+    email(formField.email, { message: 'Email must be valid' });
+    required(formField.age, { message: 'Age is required' });
+    min(formField.age, 0, { message: 'Age must be positive' });
   });
 
-  onSubmit(event: Event) {
-    console.log('SUBMITTED!');
+  onSubmit() {
+    if (this.interestForm().valid()) {
+      const submission = this.interestForm().value();
+      console.log('Submitting: ', submission);
+    }
   }
 }
