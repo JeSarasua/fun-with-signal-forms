@@ -1,57 +1,29 @@
-import { Component, signal } from '@angular/core';
-import { email, form, FormField, required } from '@angular/forms/signals';
+import { Component } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 interface InterestData {
-  name: string;
-  email: string;
-  age: number;
-  subscribe: boolean;
+  name: FormControl<string | null>;
+  email: FormControl<string | null>;
+  age: FormControl<number | null>;
+  subscribe: FormControl<boolean | null>;
 }
 
 @Component({
   selector: 'app-sw-form',
-  imports: [FormField],
+  imports: [ReactiveFormsModule],
   styleUrl: 'sw-form.component.scss',
   template: `
-    <h2>Star wars character casting</h2>
-    <form (submit)="onSubmit($event)">
+    <h2>Interest Form</h2>
+    <form [formGroup]="interestForm" (submit)="onSubmit()">
       <div>
         <label>
           Name
-          <input type="name" [formField]="interestForm.name" />
+          <input type="name" formControlName="name" />
         </label>
-        @if (interestForm.name().invalid() && interestForm.name().touched()) {
-          <div class="error">
-            @for (error of interestForm.name().errors(); track error.kind) {
-              <span>{{ error.message }}</span>
-            }
-          </div>
-        }
-      </div>
-
-      <div>
-        <label>
-          Email
-          <input type="email" [formField]="interestForm.email" />
-        </label>
-        @if (interestForm.email().invalid() && interestForm.email().touched()) {
-          <div class="error">
-            @for (error of interestForm.email().errors(); track error.kind) {
-              <span>{{ error.message }}</span>
-            }
-          </div>
-        }
-      </div>
-
-      <div>
-        <label>
-          Age
-          <input type="number" [formField]="interestForm.age" />
-        </label>
-        @if (interestForm.age().invalid() && interestForm.age().touched()) {
-          @for (error of interestForm.age().errors(); track error.kind) {
+        @if (interestForm.controls.name.touched && interestForm.controls.name.invalid) {
+          @if (interestForm.controls.name.errors?.['required']) {
             <div class="error">
-              <span>{{ error.message }}</span>
+              <span>Name is required</span>
             </div>
           }
         }
@@ -59,31 +31,60 @@ interface InterestData {
 
       <div>
         <label>
-          <input type="checkbox" [formField]="interestForm.subscribe" />
+          Email
+          <input type="email" formControlName="email" />
+        </label>
+        @if (interestForm.controls.email.touched && interestForm.controls.email.invalid) {
+          @if (interestForm.controls.email.errors?.['required']) {
+            <div class="error">
+              <span>Email is required</span>
+            </div>
+          }
+          @if (interestForm.controls.email.errors?.['email']) {
+            <div class="error">
+              <span>Email is invalid</span>
+            </div>
+          }
+        }
+      </div>
+
+      <div>
+        <label>
+          Age
+          <input type="number" formControlName="age" />
+        </label>
+        @if (interestForm.controls.age.touched && interestForm.controls.age.invalid) {
+          @if (interestForm.controls.age.errors?.['min']) {
+            <div class="error">
+              <span>Age must be positive</span>
+            </div>
+          }
+        }
+      </div>
+
+      <div>
+        <label>
+          <input type="checkbox" formControlName="subscribe" />
           Subscribe me to all emails
         </label>
       </div>
 
-      <button type="submit" [disabled]="interestForm().invalid()">Submit</button>
+      <button type="submit" [disabled]="interestForm.invalid">Submit</button>
     </form>
   `,
 })
 export class SwFormComponent {
-  interestModel = signal<InterestData>({
-    name: '',
-    email: '',
-    age: 0,
-    subscribe: false,
+  interestForm = new FormGroup<InterestData>({
+    name: new FormControl('', [Validators.required]),
+    email: new FormControl('', [Validators.required, Validators.email]),
+    age: new FormControl(0, [Validators.required, Validators.min(0)]),
+    subscribe: new FormControl(false),
   });
 
-  interestForm = form(this.interestModel, (field) => {
-    required(field.email, { message: 'Email is required' });
-    required(field.name, { message: 'Name is required' });
-    email(field.email, { message: 'Must be valid Email' });
-    required(field.age, { message: 'Age is required' });
-  });
-
-  onSubmit(event: Event) {
-    console.log('SUBMITTED!');
+  onSubmit() {
+    if (this.interestForm.valid) {
+      const submission = this.interestForm.value;
+      console.log('Submitting: ', submission);
+    }
   }
 }
